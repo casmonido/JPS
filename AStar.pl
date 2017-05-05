@@ -6,7 +6,7 @@ start_A_star( InitState, PathCost) :-
 
 	Limit is 0,
 
-	MaxLimit is 1,
+	MaxLimit is 5,
 
 	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, Limit, MaxLimit, PathCost) .
 
@@ -23,7 +23,7 @@ search_A_star(Queue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost) :-
 
 search_A_star(Queue, ClosedSet,  StepCounter, Limit, MaxLimit, PathCost) :-
 
-	member(node(InitState, nil, nil, InitCost , InitScore ), Queue), !,
+	ClosedSet == [], !, 
 
 	NewLimit is Limit + 1,	
 
