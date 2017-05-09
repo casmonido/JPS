@@ -14,32 +14,11 @@ start_A_star( InitState, PathCost) :-
 
 
 
-func(Num, Queue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost) :-
-
-	Num < 3,
-
-	fetch(Node, Queue, ClosedSet , NewQueue),
-
-	continue(Node, NewQueue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost).
-
-
-func(Num, Queue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost) :-
-
-	Num < 3,
-
-	NewNum is Num + 1, 
-
-	fetch(Node, Queue, ClosedSet , NewQueue),
-
-	func(NewNum, NewQueue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost).
-
-
-
-
-
 search_A_star(Queue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost) :-
 
-	func(0, Queue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost).
+	fetch(Node, Queue, ClosedSet , RestQueue, 2),
+
+	continue(Node, RestQueue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost).
 
 
 search_A_star(Queue, ClosedSet,  StepCounter, Limit, MaxLimit, PathCost) :-
@@ -83,14 +62,31 @@ continue(Node, RestQueue, ClosedSet, StepCounter, Limit, MaxLimit, Path)  :-
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue) :-
+			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, _) :-
 
-	\+ member(node(State, _ ,_  , _ , _ ) , ClosedSet), !.
+	\+ member(node(State, _ ,_  , _ , _ ) , ClosedSet).
 
 
-fetch(Node, [ _ |RestQueue], ClosedSet, NewRest) :-
+fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
 
-	fetch(Node, RestQueue, ClosedSet , NewRest).
+	member(FirstNode , ClosedSet),
+
+	fetch(Node, RestQueue, ClosedSet , NewRest, NNodes).
+
+
+fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NNodes) :-
+
+	\+ member(FirstNode , ClosedSet),
+
+	NNodes > 0,
+
+	NewNNodes is NNodes - 1,
+
+	fetch(Node, RestQueue, ClosedSet, NewRest, NewNNodes).
+
+
+
+
 
 
 
