@@ -1,61 +1,54 @@
-start_A_star( InitState, PathCost) :-
+start_A_star( InitState, PathCost, StepLimit ) :-
 
-	score(InitState, 0, 0, InitCost, InitScore) ,
+	score(InitState, 0, 0, InitCost, InitScore),
 
 	StepCounter is 0,
 
-	Limit is 0,
-
-	MaxLimit is 5,
-
-	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, Limit, MaxLimit, PathCost) .
+	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, StepLimit, PathCost) .
 
 
+start_A_star( InitState, PathCost, StepLimit ) :-
 
+	5 > StepLimit,
 
+	NewStepLimit is StepLimit + 1,
 
-search_A_star(Queue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost) :-
-
-	fetch(Node, Queue, ClosedSet , RestQueue, 2),
-
-	continue(Node, RestQueue, ClosedSet, StepCounter, Limit, MaxLimit, PathCost).
-
-
-search_A_star(Queue, ClosedSet,  StepCounter, Limit, MaxLimit, PathCost) :-
-
-	ClosedSet == [], !, 
-
-	NewLimit is Limit + 1,	
-
-	MaxLimit >= NewLimit,
-
-	search_A_star(Queue, ClosedSet, StepCounter, NewLimit, MaxLimit, PathCost).
-
+	start_A_star( InitState, PathCost, NewStepLimit ).
 	
 
 
 
-continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, _, path_cost(Path, Cost) ) :-
+
+search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost) :-
+
+	fetch(Node, Queue, ClosedSet , RestQueue, 1),
+
+	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost).
+	
+
+
+
+
+continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cost(Path, Cost) ) :-
 
 	goal( State), ! ,
 
 	build_path(node(Parent, _ ,_ , _ , _ ) , ClosedSet, [Action/State], Path) .
 
 
-
-
-
-continue(Node, RestQueue, ClosedSet, StepCounter, Limit, MaxLimit, Path)  :-
+continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path)  :-
 
 	NewStepCounter is StepCounter + 1,
 
-	Limit >= StepCounter,
+	StepLimit >= StepCounter,
 
 	expand(Node, NewNodes),
 
 	insert_new_nodes(NewNodes, RestQueue, NewQueue),
 
-	search_A_star(NewQueue, [ Node | ClosedSet ], NewStepCounter, Limit, MaxLimit, Path).
+	search_A_star(NewQueue, [ Node | ClosedSet ], NewStepCounter, StepLimit, Path).
+
+
 
 
 
@@ -86,9 +79,6 @@ fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NNodes) :-
 
 
 
-
-
-
 expand(node(State, _ ,_ , Cost, _ ), NewNodes)  :-
 
 	findall(node(ChildState, Action, State, NewCost, ChildScore) ,
@@ -111,6 +101,7 @@ score(State, ParentCost, StepCost, Cost, FScore)  :-
 
 
 
+
 insert_new_nodes( [ ], Queue, Queue) .
 
 
@@ -124,7 +115,7 @@ insert_new_nodes( [Node|RestNodes], Queue, NewQueue) :-
 
 
 
-insert_p_queue(Node,  [ ], [Node] )      :-    ! .
+insert_p_queue(Node,  [ ], [Node] )  :- ! .
 
 
 insert_p_queue(node(State, Action, Parent, Cost, FScore),
@@ -138,6 +129,7 @@ insert_p_queue(node(State, Action, Parent, Cost, FScore),
 
 insert_p_queue(node(State, Action, Parent, Cost, FScore),  Queue,
 				[node(State, Action, Parent, Cost, FScore)|Queue]) .
+
 
 
 
@@ -166,6 +158,7 @@ del([Y|R],X,[Y|R1]) :-
 
 
 
+
 hScore(State, HScore) :-
 	HScore is 0.
 
@@ -173,6 +166,6 @@ goal(e).
 
 succ(a, Action, 0, b).
 succ(a, Action, 0, c).
-succ(a, Action, 0, f).
+succ(a, Action, 0, d).
 succ(b, Action, 0, d).
 succ(d, Action, 0, e).
