@@ -60,23 +60,20 @@ continue(Node, RestQueue, ClosedSet, StepCounter, Limit, MaxLimit, Path)  :-
 
 
 
-
-fetch(node(State, Action,Parent, Cost, Score),
-			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, _) :-
-
-	\+ member(node(State, _ ,_  , _ , _ ) , ClosedSet).
-
-
 fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
 
-	member(FirstNode , ClosedSet),
+	member(FirstNode , ClosedSet), !,
 
 	fetch(Node, RestQueue, ClosedSet , NewRest, NNodes).
 
 
-fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NNodes) :-
+fetch(node(State, Action,Parent, Cost, Score),
+			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, NNodes) :- 
+	
+	NNodes > 0.
 
-	\+ member(FirstNode , ClosedSet),
+
+fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NNodes) :-
 
 	NNodes > 0,
 
