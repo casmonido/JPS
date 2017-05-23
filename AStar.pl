@@ -52,10 +52,27 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path)  :-
 
 
 
+member_node(node(Element, _, _, _, _), [node(Element, Action, Parent, Cost, Score) | RestClosedSet], node(Element, Action, Parent, Cost, Score) ).
 
-fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
 
-	member(FirstNode , ClosedSet), !,
+member_node(Node, [ _ | RestClosedSet], OtherNode ) :-
+	
+	member_node(Node, RestClosedSet, OtherNode).
+
+
+
+
+
+fetch(node(Element, Action, Parent, Cost, Score), [ node(Element, Action, Parent, Cost, Score) |RestQueue], ClosedSet, NewRest, NNodes) :-
+
+	member_node(node(Element, Action, Parent, Cost, Score) , ClosedSet, node(Element, Action1, Parent1, Cost1, Score1)),
+
+	Cost1 > Cost, !.
+
+
+fetch(Node, [ node(Element, Action, Parent, Cost, Score) |RestQueue], ClosedSet, NewRest, NNodes) :-
+
+	member_node(node(Element, Action, Parent, Cost, Score) , ClosedSet, node(Element, Action1, Parent1, Cost1, Score1)), !,
 
 	fetch(Node, RestQueue, ClosedSet , NewRest, NNodes).
 
@@ -159,13 +176,23 @@ del([Y|R],X,[Y|R1]) :-
 
 
 
-hScore(State, HScore) :-
-	HScore is 0.
+hScore(a, 0).
+hScore(b, 0).
+hScore(c, 4).
+hScore(d, 0).
+hScore(e, 4).
+hScore(f, 3).
 
-goal(e).
+goal(f).
 
-succ(a, Action, 0, b).
-succ(a, Action, 0, c).
-succ(a, Action, 0, d).
-succ(b, Action, 0, d).
-succ(d, Action, 0, e).
+succ(a, Action, 5, b).
+succ(a, Action, 2, c).
+
+succ(b, Action, 5, d).
+
+succ(c, Action, 5, e).
+
+succ(d, Action, 0, f).
+
+succ(e, Action, 2, d).
+succ(e, Action, 1, f).
