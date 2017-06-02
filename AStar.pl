@@ -1,129 +1,63 @@
-start_A_star( InitState, PathCost, StepLimit ) :-
+start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesCheckedNum) :-
+
+	MaxSteps > StepLimit,
 
 	score(InitState, 0, 0, InitCost, InitScore),
 
 	StepCounter is 0,
 
-	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, StepLimit, PathCost) .
+	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
 
 
-start_A_star( InitState, PathCost, StepLimit ) :-
+start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesChecked) :-
 
-	5 > StepLimit,
+	MaxSteps > StepLimit,
 
 	NewStepLimit is StepLimit + 1,
 
-	start_A_star( InitState, PathCost, NewStepLimit ).
+	start_A_star( InitState, PathCost, NewStepLimit, MaxSteps, MaxNodesChecked).
 	
 
 
 
 
-search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost) :-
+search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum) :-
 
-	fetch(Node, Queue, ClosedSet , RestQueue, 1),
+	fetch(Node, Queue, ClosedSet , RestQueue, MaxNodesCheckedNum),
 
-	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost).
+	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
 	
 
 
 
 
-continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cost(Path, Cost) ) :-
+continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cost(Path, Cost), MaxNodesCheckedNum) :-
 
 	goal( State), ! ,
 
 	build_path(node(Parent, _ ,_ , _ , _ ) , ClosedSet, [Action/State], Path) .
 
 
-continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path)  :-
+continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheckedNum)  :-
 
 	NewStepCounter is StepCounter + 1,
 
 	StepLimit >= StepCounter,
 
-	is_possible_to_go_forward(StepCounter, StepLimit),
-
-	write('Krok '), write(StepCounter), write(': [ '),
-
-	write_n_nodes(2, RestQueue),
-
-	write('], Wybrany wezel: '), write_node(Node),
-
-	write('czy kontynuowac? - t./n.:\n'),
-
 	expand(Node, NewNodes),
 
 	insert_new_nodes(NewNodes, RestQueue, NewQueue),
 
-	search_A_star(NewQueue, [ Node | ClosedSet ], NewStepCounter, StepLimit, Path).
+	search_A_star(NewQueue, [ Node | ClosedSet ], NewStepCounter, StepLimit, Path, MaxNodesCheckedNum).
 
 
 
 
 
-is_possible_to_go_forward(StepCounter, StepLimit) :-
 
-	StepLimit >= StepCounter, !.
+fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
 
-
-is_possible_to_go_forward(StepCounter, StepLimit) :-
-
-	write('Powrot do fetch\n\n'), 
-
-	fail.
-
-
-
-
-write_node(node(State, Action, Parent, Cost, Score)) :-
-
-	write(State), write('/'), write(Score), write(' ').
-
-
-
-
-
-write_n_nodes(_, []) :- !.
-
-
-write_n_nodes(Num, [Node | RestQueue]) :- 
-
-	NewNum is Num - 1,
-
-	Num > 0,
-
-	write_node(Node),
-
-	write_n_nodes(NewNum, RestQueue), !.
-
-
-write_n_nodes(_, _).
-
-
-
-
-member_node(node(Element, _, _, _, _), [node(Element, Action, Parent, Cost, Score) | RestClosedSet], node(Element, Action, Parent, Cost, Score) ).
-
-
-member_node(Node, [ _ | RestClosedSet], OtherNode ) :-
-	
-	member_node(Node, RestClosedSet, OtherNode).
-
-
-
-
-
-fetch(node(Element, Action, Parent, Cost, Score), [ node(Element, Action, Parent, Cost, Score) |RestQueue], ClosedSet, NewRest, NNodes) :-
-
-	member_node(node(Element, Action, Parent, Cost, Score) , ClosedSet, node(Element, Action1, Parent1, Cost1, Score1)),
-
-	Cost1 > Cost, !.
-
-
-fetch(Node, [ node(Element, Action, Parent, Cost, Score) |RestQueue], ClosedSet, NewRest, NNodes) :-
-
-	member_node(node(Element, Action, Parent, Cost, Score) , ClosedSet, node(Element, Action1, Parent1, Cost1, Score1)), !,
+	member(FirstNode , ClosedSet), !,
 
 	fetch(Node, RestQueue, ClosedSet , NewRest, NNodes).
 
@@ -227,23 +161,13 @@ del([Y|R],X,[Y|R1]) :-
 
 
 
-hScore(a, 0).
-hScore(b, 0).
-hScore(c, 4).
-hScore(d, 0).
-hScore(e, 4).
-hScore(f, 3).
+hScore(State, HScore) :-
+	HScore is 0.
 
-goal(f).
+goal(e).
 
-succ(a, Action, 5, b).
-succ(a, Action, 2, c).
-
-succ(b, Action, 5, d).
-
-succ(c, Action, 5, e).
-
-succ(d, Action, 0, f).
-
-succ(e, Action, 2, d).
-succ(e, Action, 1, f).
+succ(a, Action, 0, b).
+succ(a, Action, 0, c).
+succ(a, Action, 0, d).
+succ(b, Action, 0, d).
+succ(d, Action, 0, e).
