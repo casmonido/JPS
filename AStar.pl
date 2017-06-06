@@ -40,27 +40,29 @@ continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cos
 	build_path(node(Parent, _ ,_ , _ , _ ) , ClosedSet, [Action/State], Path) .
 
 
-continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheckedNum)  :-
+continue(node(State, Action, Parent, Cost, Score), RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheckedNum)  :-
 
 	NewStepCounter is StepCounter + 1,
 
 	is_possible_to_go_forward(StepLimit, StepCounter),
 
-	write('Krok '), write(StepCounter), write(': [ '),
+	write('Krok '), write(StepCounter),
 
-	write_n_nodes(MaxNodesCheckedNum, RestQueue),
+	write(', Wybrany wezel: \n'), 
 
-	write('], Wybrany wezel: '), write_node(Node),
+	write_row(3, 1, State, State),
+	write_row(2, 1, State, State),
+	write_row(1, 1, State, State),
 
 	write(' - rozwijac ten wezel czy przejsc do kolejnego (jesli istnieje)? - t./n.:\n'),
 
 	read('t'),
 
-	expand(Node, NewNodes),
+	expand(node(State, Action, Parent, Cost, Score), NewNodes),
 
 	insert_new_nodes(NewNodes, RestQueue, NewQueue),
 
-	search_A_star(NewQueue, [ Node | ClosedSet ], NewStepCounter, StepLimit, Path, MaxNodesCheckedNum).
+	search_A_star(NewQueue, [ node(State, Action, Parent, Cost, Score) | ClosedSet ], NewStepCounter, StepLimit, Path, MaxNodesCheckedNum).
 
 
 
@@ -78,6 +80,36 @@ is_possible_to_go_forward(StepLimit, StepCounter) :-
 
 	fail.
 
+
+
+
+write_row(RowNum, ColNum, [pos(X, RowNum/ColNum) | Rest], WholeList) :-
+
+	ColNum < 3,
+
+	write(X), write(' '),
+
+	NewColNum is ColNum + 1,
+
+	write_row(RowNum, NewColNum, WholeList, WholeList).
+
+
+
+write_row(RowNum, ColNum, [pos(X, RowNum/ColNum) | Rest], WholeList) :-
+
+	write(X),
+
+	write('\n').
+
+
+write_row(RowNum, ColNum, [ _ | Rest], WholeList) :-
+
+	write_row(RowNum, ColNum, Rest, WholeList).
+	
+
+write_row(RowNum, ColNum, [], WholeList) :-
+
+	write('\n').
 
 
 
