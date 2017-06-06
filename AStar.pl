@@ -56,7 +56,7 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheck
 
 	write(' - rozwijac ten wezel czy przejsc do kolejnego (jesli istnieje)? - t./n.:\n'),
 
-	read('t'),
+	read(t),
 
 	expand(Node, NewNodes),
 
@@ -74,7 +74,7 @@ is_possible_to_go_forward(StepLimit, StepCounter) :-
 	StepLimit >= StepCounter, !.
 
 
-is_possible_to_go_forward(StepLimit, StepCounter) :-
+is_possible_to_go_forward(_, _) :-
 
 	write('Powrot do fetch\n\n'), 
 
@@ -84,12 +84,12 @@ is_possible_to_go_forward(StepLimit, StepCounter) :-
 
 
 
-write_row(RowNum, ColNum, [], WholeList) :-
+write_row(_, _, [], _) :-
 
 	write('\n').
 
 
-write_row(RowNum, ColNum, [pos(X, RowNum/ColNum) | Rest], WholeList) :-
+write_row(RowNum, ColNum, [pos(X, ColNum/RowNum) | _], WholeList) :-
 
 	ColNum < 3, !,
 
@@ -101,7 +101,7 @@ write_row(RowNum, ColNum, [pos(X, RowNum/ColNum) | Rest], WholeList) :-
 
 
 
-write_row(RowNum, ColNum, [pos(X, RowNum/ColNum) | Rest], WholeList) :-
+write_row(RowNum, ColNum, [pos(X, ColNum/RowNum) | Rest], WholeList) :-
 
 	write(X),
 
@@ -116,15 +116,15 @@ write_row(RowNum, ColNum, [ _ | Rest], WholeList) :-
 
 
 write_element(node(State, Action, Parent, Cost, Score)) :-
+	write('\t'), 
 	write_row(3, 1, State, State),
+	write('\t'), 
 	write_row(2, 1, State, State),
+	write('\t'), 
 	write_row(1, 1, State, State),
-	write('------\n').
+	write('\tFscore: '), write(Score), write('\n').
 
 
-write_node(node(State, Action, Parent, Cost, Score)) :-
-
-	write(State), write('/'), write(Score), write(' ').
 
 
 write_n_nodes(Num, []).
