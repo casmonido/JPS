@@ -40,29 +40,29 @@ continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cos
 	build_path(node(Parent, _ ,_ , _ , _ ) , ClosedSet, [Action/State], Path) .
 
 
-continue(node(State, Action, Parent, Cost, Score), RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheckedNum)  :-
+continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheckedNum)  :-
 
 	NewStepCounter is StepCounter + 1,
 
 	is_possible_to_go_forward(StepLimit, StepCounter),
 
-	write('Krok '), write(StepCounter),
+	write('Krok '), write(StepCounter), write('\nStan kolejki:\n'),
 
-	write(', Wybrany wezel: \n'), 
+	write_n_nodes(MaxNodesCheckedNum, RestQueue),
 
-	write_row(3, 1, State, State),
-	write_row(2, 1, State, State),
-	write_row(1, 1, State, State),
+	write('Wybrany wezel: \n'), 
+
+	write_element(Node),
 
 	write(' - rozwijac ten wezel czy przejsc do kolejnego (jesli istnieje)? - t./n.:\n'),
 
 	read('t'),
 
-	expand(node(State, Action, Parent, Cost, Score), NewNodes),
+	expand(Node, NewNodes),
 
 	insert_new_nodes(NewNodes, RestQueue, NewQueue),
 
-	search_A_star(NewQueue, [ node(State, Action, Parent, Cost, Score) | ClosedSet ], NewStepCounter, StepLimit, Path, MaxNodesCheckedNum).
+	search_A_star(NewQueue, [ Node | ClosedSet ], NewStepCounter, StepLimit, Path, MaxNodesCheckedNum).
 
 
 
@@ -83,9 +83,15 @@ is_possible_to_go_forward(StepLimit, StepCounter) :-
 
 
 
+
+write_row(RowNum, ColNum, [], WholeList) :-
+
+	write('\n').
+
+
 write_row(RowNum, ColNum, [pos(X, RowNum/ColNum) | Rest], WholeList) :-
 
-	ColNum < 3,
+	ColNum < 3, !,
 
 	write(X), write(' '),
 
@@ -99,7 +105,7 @@ write_row(RowNum, ColNum, [pos(X, RowNum/ColNum) | Rest], WholeList) :-
 
 	write(X),
 
-	write('\n').
+	write('\n') , !.
 
 
 write_row(RowNum, ColNum, [ _ | Rest], WholeList) :-
@@ -107,12 +113,13 @@ write_row(RowNum, ColNum, [ _ | Rest], WholeList) :-
 	write_row(RowNum, ColNum, Rest, WholeList).
 	
 
-write_row(RowNum, ColNum, [], WholeList) :-
-
-	write('\n').
 
 
-
+write_element(node(State, Action, Parent, Cost, Score)) :-
+	write_row(3, 1, State, State),
+	write_row(2, 1, State, State),
+	write_row(1, 1, State, State),
+	write('------\n').
 
 
 write_node(node(State, Action, Parent, Cost, Score)) :-
@@ -128,7 +135,7 @@ write_n_nodes(Num, [Node | RestQueue]) :-
 
 	Num > 0,
 
-	write_node(Node),
+	write_element(Node),
 
 	write_n_nodes(NewNum, RestQueue).
 
