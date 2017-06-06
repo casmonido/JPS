@@ -23,10 +23,12 @@ start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesCheckedNum) :-
 
 search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum) :-
 
-	fetch(Node, Queue, ClosedSet, UpdatedClosedSet, RestQueue, MaxNodesCheckedNum),
+	fetch(Node, Queue, ClosedSet, RestQueue, MaxNodesCheckedNum),
 
-	continue(Node, RestQueue, UpdatedClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
+	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
 	
+
+
 
 
 
@@ -42,7 +44,17 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheck
 
 	NewStepCounter is StepCounter + 1,
 
-	StepLimit >= StepCounter,
+	is_possible_to_go_forward(StepLimit, StepCounter),
+
+	write('Krok '), write(StepCounter), write(': [ '),
+
+	write_n_nodes(MaxNodesCheckedNum, RestQueue),
+
+	write('], Wybrany wezel: '), write_node(Node),
+
+	write(' - rozwijac ten wezel czy przejsc do kolejnego (jesli istnieje)? - t./n.:\n'),
+
+	read('t'),
 
 	expand(Node, NewNodes),
 
@@ -54,84 +66,64 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheck
 
 
 
-change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | RestNextSet], AlreadyDone, ResultSet) :-
 
-	\+ member(El, AlreadyDone), !,
+is_possible_to_go_forward(StepLimit, StepCounter) :-
 
-	write('Change cost+score from parent '), write(Parent), write(', to child: '), write(El), write('\n'),
-
-	NewCost is Cost - CostDiff,
-
-	NewScore is FScore - CostDiff,
-
-	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
-
-	change_children_values(Parent, CostDiff, WholePrev, RestNextSet, [El | AlreadyDone], ResultSetOne),
-
-	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet).
+	StepLimit >= StepCounter, !.
 
 
-change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | NextSet], AlreadyDone, ResultSet) :-
+is_possible_to_go_forward(StepLimit, StepCounter) :-
 
-	write('Change cost+score from parent '), write(Parent), write(', to child: '), write(El), write('\n'),
+	write('Powrot do fetch\n\n'), 
 
-	NewCost is Cost - CostDiff,
-
-	NewScore is FScore - CostDiff,
-
-	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
-
-	change_children_values(Parent, CostDiff, WholePrev, NextSet, AlreadyDone, ResultSet).
-
-
-change_children_values(_, _, PrevSet, [], _, PrevSet).
-
-
-change_children_values(Parent, CostDiff, PrevSet, [X | NextSet], AlreadyDone, ResultSet)  :-
-
-	add_to_end(X, PrevSet, WholePrev),
-
-	change_children_values(Parent, CostDiff, WholePrev, NextSet, AlreadyDone, ResultSet).
+	fail.
 
 
 
 
 
-fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NNodes) :-
 
-	in_closed_set_with_worse_score_if_so_swap(FirstNode, ClosedSet, NewClosedSet, CostDiff, Parent), !,
+write_node(node(State, Action, Parent, Cost, Score)) :-
 
-	write('Przeszczep galezi '), write(Parent), write('\n'),
-
-	change_children_values(Parent, CostDiff, [], NewClosedSet, [], UpdatedClosedSet),
-
-	change_children_values(Parent, CostDiff, [], RestQueue, [], NewRestQueue),
-
-	fetch(ReturnNode, NewRestQueue, UpdatedClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NNodes).
+	write(State), write('/'), write(Score), write(' ').
 
 
+write_n_nodes(Num, []).
 
-fetch(Node, [FirstNode |RestQueue], ClosedSet, UpdatedClosedSet, NewRest, NNodes) :-
+write_n_nodes(Num, [Node | RestQueue]) :- 
 
-	member(FirstNode, ClosedSet), !,
+	NewNum is Num - 1,
 
-	fetch(Node, RestQueue, ClosedSet, UpdatedClosedSet, NewRest, NNodes).
+	Num > 0,
 
+	write_node(Node),
+
+	write_n_nodes(NewNum, RestQueue).
+
+
+
+
+
+fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
+
+	member(FirstNode , ClosedSet), !,
+
+	fetch(Node, RestQueue, ClosedSet , NewRest, NNodes).
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet, ClosedSet, RestQueue, NNodes) :- 
+			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, NNodes) :- 
 	
 	NNodes > 0.
 
 
-fetch(Node,	[FirstNode |RestQueue], ClosedSet, UpdatedClosedSet, [FirstNode | NewRest], NNodes) :-
+fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NNodes) :-
 
 	NNodes > 0,
 
 	NewNNodes is NNodes - 1,
 
-	fetch(Node, RestQueue, ClosedSet, UpdatedClosedSet, NewRest, NewNNodes).
+	fetch(Node, RestQueue, ClosedSet, NewRest, NewNNodes).
 
 
 
@@ -150,11 +142,11 @@ expand(node(State, _ ,_ , Cost, _ ), NewNodes)  :-
 
 score(State, ParentCost, StepCost, Cost, FScore)  :-
 
-	Cost is ParentCost + StepCost,
+	Cost is ParentCost + StepCost ,
 
 	hScore(State, HScore),
 
-	FScore is Cost + HScore.
+	FScore is Cost + HScore .
 
 
 
@@ -217,61 +209,91 @@ del([Y|R],X,[Y|R1]) :-
 
 
 
-in_closed_set_with_worse_score_if_so_swap(node(Element, Action, Parent, Cost, Score), 
-										[node(Element, _, _, OldCost, _) | RestClosedSet], 
-			[node(Element, Action, Parent, Cost, Score) | RestClosedSet], CostDiff, Element) :-
-
-	OldCost > Cost, !, 
-
-	CostDiff is OldCost - Cost.
-
-
-in_closed_set_with_worse_score_if_so_swap(Node, [ OtherNode | RestClosedSet], 
-										[OtherNode | NewRestClosedSet], CostDiff, NodeName) :-
-	
-	in_closed_set_with_worse_score_if_so_swap(Node, RestClosedSet, NewRestClosedSet, CostDiff, NodeName).
+goal([ 		pos(0 , 3/1), pos(1 , 1/3), pos(2 , 2/3), 
+			pos(3 , 3/3), pos(4 , 1/2), pos(5 , 2/2), 
+			pos(6 , 3/2), pos(7 , 1/1), pos(8 , 2/1) 	]) .
 
 
 
 
+succ( [ pos(0, EmptyPos) | TilePositions], _, 1, [pos(0, NewEmptyPos) | NewTilePositions ] ) :-
 
-add_to_end(Elem, [First | RestSet], [First | ReturnSet]) :-
-
-			add_to_end(Elem, RestSet, ReturnSet).
+	find_neighbour(EmptyPos, TilePositions, NewEmptyPos, NewTilePositions) .
 
 
-add_to_end(Elem, [], [Elem]).
+find_neighbour(	EmptyPos, [pos(Neighb, NeighbPos)|RestPositions],
+				NeighbPos, [pos(Neighb, EmptyPos)|RestPositions]) :-
+
+		adjacent(EmptyPos, NeighbPos).
+
+
+find_neighbour(EmptyPos, [T |RestPositions], NewEmptyPos, [T | NewPositions]) :-
+			
+		find_neighbour(EmptyPos, RestPositions, NewEmptyPos, NewPositions) .
 
 
 
 
 
+adjacent(X1/Y1, X2/Y1) :-
+
+		DiffX is X1-X2,
+
+		abs(DiffX, 1).
+
+
+adjacent(X1/Y1, X1/Y2) :-
+		
+		DiffY is Y1-Y2,
+
+		abs(DiffY, 1).
 
 
 
-hScore(a, 3).
-hScore(b, 8).
-hScore(c, 1).
-hScore(d, 1).
-hScore(e, 0).
-hScore(f, 27).
-hScore(g, 100).
 
-goal(g).
+abs(X, X) :-
+		
+	X >=0, ! .
 
-succ(a, ab, 1, b).
-succ(a, ac, 5, c).
-succ(a, ad, 1, d).
 
-succ(b, bc, 1, c).
-succ(b, bf, 5, f).
+abs(X, AbsX) :-
 
-succ(c, ce, 1, e).
-succ(c, cf, 1, f).
+	AbsX is -X.
 
-succ(d, de, 7, e).
-succ(d, df, 8, f).
 
-succ(e, ef, 2, f).
 
-succ(f, fg, 2, g).
+hScore( [ _ | Positions ], HScore) :-
+
+	goal( [ _ | GoalPositions ]),
+
+	sum_of_distances(Positions, GoalPositions, HScore).
+
+
+
+
+
+sum_of_distances( [ ], [ ], 0 ) .
+
+
+sum_of_distances( [pos( _, Pos) | RestPositions], [pos( _, GoalPos) | RestGoalPositions], Sum) :-
+
+		distance( Pos, GoalPos, Dist ),
+
+		sum_of_distances(RestPositions, RestGoalPositions, Sum1),
+
+		Sum is Sum1 + Dist .
+
+
+
+
+distance( X1 / Y1, X2 / Y2, Dist) :-
+
+	DiffX is X1 - X2,
+
+	abs(DiffX, DistX),
+
+	DiffY is Y1 - Y2,
+
+	abs(DiffY, DistY),
+
+	Dist is DistX + DistY .
