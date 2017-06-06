@@ -205,6 +205,7 @@ insert_new_nodes( [Node|RestNodes], Queue, NewQueue) :-
 
 
 
+
 insert_p_queue(Node,  [ ], [Node] )  :- ! .
 
 
