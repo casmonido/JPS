@@ -6,6 +6,8 @@ start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesCheckedNum) :-
 
 	StepCounter is 0,
 
+	write('Uwaga, odrzucenie mozliwosci rozwiniecia stanu X skutkuje: \na) ponowieniem fetch\nb)w przypadku niepowodzenia fetch, ponowieniem search_A_star z nowym limitem.\n'),
+
 	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
 
 
@@ -27,7 +29,6 @@ search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesChecke
 
 	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
 	
-
 
 
 
@@ -101,7 +102,7 @@ write_row(RowNum, ColNum, [pos(X, ColNum/RowNum) | _], WholeList) :-
 
 
 
-write_row(RowNum, ColNum, [pos(X, ColNum/RowNum) | Rest], WholeList) :-
+write_row(RowNum, ColNum, [pos(X, ColNum/RowNum) | _], _) :-
 
 	write(X),
 
@@ -115,7 +116,7 @@ write_row(RowNum, ColNum, [ _ | Rest], WholeList) :-
 
 
 
-write_element(node(State, Action, Parent, Cost, Score)) :-
+write_element(node(State, _, _, _, Score)) :-
 	write('\t'), 
 	write_row(3, 1, State, State),
 	write('\t'), 
@@ -127,7 +128,7 @@ write_element(node(State, Action, Parent, Cost, Score)) :-
 
 
 
-write_n_nodes(Num, []).
+write_n_nodes(_, []).
 
 write_n_nodes(Num, [Node | RestQueue]) :- 
 
@@ -151,7 +152,7 @@ fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, NNodes) :- 
+			[node(State, Action,Parent, Cost, Score) |RestQueue], _,  RestQueue, NNodes) :- 
 	
 	NNodes > 0.
 
@@ -200,7 +201,6 @@ insert_new_nodes( [Node|RestNodes], Queue, NewQueue) :-
 	insert_p_queue(Node, Queue, Queue1),
 
 	insert_new_nodes( RestNodes, Queue1, NewQueue) .
-
 
 
 
