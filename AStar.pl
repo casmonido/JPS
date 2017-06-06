@@ -9,13 +9,13 @@ start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesCheckedNum) :-
 	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
 
 
-start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesChecked) :-
+start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesCheckedNum) :-
 
 	MaxSteps > StepLimit,
 
 	NewStepLimit is StepLimit + 1,
 
-	start_A_star( InitState, PathCost, NewStepLimit, MaxSteps, MaxNodesChecked).
+	start_A_star( InitState, PathCost, NewStepLimit, MaxSteps, MaxNodesCheckedNum).
 	
 
 
@@ -23,15 +23,15 @@ start_A_star( InitState, PathCost, StepLimit, MaxSteps, MaxNodesChecked) :-
 
 search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum) :-
 
-	fetch(Node, Queue, ClosedSet , RestQueue, MaxNodesCheckedNum),
+	fetch(Node, Queue, ClosedSet, UpdatedClosedSet, RestQueue, MaxNodesCheckedNum),
 
-	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
+	continue(Node, RestQueue, UpdatedClosedSet, StepCounter, StepLimit, PathCost, MaxNodesCheckedNum).
 	
 
 
 
 
-continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cost(Path, Cost), MaxNodesCheckedNum) :-
+continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cost(Path, Cost), _) :-
 
 	goal( State), ! ,
 
@@ -54,11 +54,11 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, MaxNodesCheck
 
 
 
-change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | NextSet], AlreadyDone, ResultSet) :-
+change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | RestNextSet], AlreadyDone, ResultSet) :-
 
 	\+ member(El, AlreadyDone), !,
 
-	write('Change child value '), write(Parent), write(Cost), write(El), write('\n'),
+	write('Change cost+score from parent '), write(Parent), write(', to child: '), write(El), write('\n'),
 
 	NewCost is Cost - CostDiff,
 
@@ -66,14 +66,14 @@ change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost
 
 	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
 
-	change_children_values(Parent, CostDiff, WholePrev, NextSet, [El | AlreadyDone], ResultSetOne),
+	change_children_values(Parent, CostDiff, WholePrev, RestNextSet, [El | AlreadyDone], ResultSetOne),
 
 	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet).
 
 
 change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | NextSet], AlreadyDone, ResultSet) :-
 
-	write('Change child value '), write(Parent), write(Cost), write(El), write('\n'),
+	write('Change cost+score from parent '), write(Parent), write(', to child: '), write(El), write('\n'),
 
 	NewCost is Cost - CostDiff,
 
@@ -97,41 +97,41 @@ change_children_values(Parent, CostDiff, PrevSet, [X | NextSet], AlreadyDone, Re
 
 
 
-fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
+fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NNodes) :-
 
-	in_closed_set_with_worse_score_if_so_swap(FirstNode, ClosedSet, NewClosedSet, CostDiff, Parent),
+	in_closed_set_with_worse_score_if_so_swap(FirstNode, ClosedSet, NewClosedSet, CostDiff, Parent), !,
 
 	write('Przeszczep galezi '), write(Parent), write('\n'),
 
 	change_children_values(Parent, CostDiff, [], NewClosedSet, [], UpdatedClosedSet),
 
-	change_children_values(Parent, CostDiff, [], RestQueue, [], NewQueue),
+	change_children_values(Parent, CostDiff, [], RestQueue, [], NewRestQueue),
 
-	fetch(Node, NewQueue, UpdatedClosedSet, NewRest, NNodes).
+	fetch(ReturnNode, NewRestQueue, UpdatedClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NNodes).
 
 
 
-fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NNodes) :-
+fetch(Node, [FirstNode |RestQueue], ClosedSet, UpdatedClosedSet, NewRest, NNodes) :-
 
 	member(FirstNode, ClosedSet), !,
 
-	fetch(Node, RestQueue, ClosedSet , NewRest, NNodes).
+	fetch(Node, RestQueue, ClosedSet, UpdatedClosedSet, NewRest, NNodes).
 
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, NNodes) :- 
+			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet, ClosedSet, RestQueue, NNodes) :- 
 	
 	NNodes > 0.
 
 
-fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NNodes) :-
+fetch(Node,	[FirstNode |RestQueue], ClosedSet, UpdatedClosedSet, [FirstNode | NewRest], NNodes) :-
 
 	NNodes > 0,
 
 	NewNNodes is NNodes - 1,
 
-	fetch(Node, RestQueue, ClosedSet, NewRest, NewNNodes).
+	fetch(Node, RestQueue, ClosedSet, UpdatedClosedSet, NewRest, NewNNodes).
 
 
 
@@ -217,19 +217,19 @@ del([Y|R],X,[Y|R1]) :-
 
 
 
-in_closed_set_with_worse_score_if_so_swap(node(Element, A1, Parent, Cost, Score), 
-	[node(Element, A2, OldParent, OldCost, OldScore) | RestClosedSet], 
-			[node(Element, A1, Parent, Cost, Score) | RestClosedSet], CostDiff, Element) :-
+in_closed_set_with_worse_score_if_so_swap(node(Element, Action, Parent, Cost, Score), 
+										[node(Element, _, _, OldCost, _) | RestClosedSet], 
+			[node(Element, Action, Parent, Cost, Score) | RestClosedSet], CostDiff, Element) :-
 
-	OldCost > Cost, 
+	OldCost > Cost, !, 
 
 	CostDiff is OldCost - Cost.
 
 
-in_closed_set_with_worse_score_if_so_swap(Node, [ _ | RestClosedSet], 
-	NewClosedSet, CostDiff, ParentEl) :-
+in_closed_set_with_worse_score_if_so_swap(Node, [ OtherNode | RestClosedSet], 
+										[OtherNode | NewRestClosedSet], CostDiff, NodeName) :-
 	
-	in_closed_set_with_worse_score_if_so_swap(Node, RestClosedSet, NewClosedSet, CostDiff, ParentEl).
+	in_closed_set_with_worse_score_if_so_swap(Node, RestClosedSet, NewRestClosedSet, CostDiff, NodeName).
 
 
 
@@ -255,20 +255,23 @@ hScore(c, 1).
 hScore(d, 1).
 hScore(e, 0).
 hScore(f, 27).
+hScore(g, 100).
 
-goal(f).
+goal(g).
 
-succ(a, _, 1, b).
-succ(a, _, 5, c).
-succ(a, _, 1, d).
+succ(a, ab, 1, b).
+succ(a, ac, 5, c).
+succ(a, ad, 1, d).
 
-succ(b, _, 1, c).
-succ(b, _, 5, f).
+succ(b, bc, 1, c).
+succ(b, bf, 5, f).
 
-succ(c, _, 1, e).
-succ(c, _, 1, f).
+succ(c, ce, 1, e).
+succ(c, cf, 1, f).
 
-succ(d, _, 7, e).
-succ(d, _, 8, f).
+succ(d, de, 7, e).
+succ(d, df, 8, f).
 
-succ(e, _, 2, f).
+succ(e, ef, 2, f).
+
+succ(f, fg, 2, g).
