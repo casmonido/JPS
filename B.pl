@@ -91,9 +91,53 @@ write_n_nodes(Num, [Node | RestQueue]) :-
 
 
 
-write_element(node(State, Action, Parent, Cost, Score)) :-
+write_element(node(State, _, _, _, Score)) :-
+	write('\t'), 
+	write_row(3, 1, State, State),
+	write('\t'), 
+	write_row(2, 1, State, State),
+	write('\t'), 
+	write_row(1, 1, State, State),
+	write('\tFscore: '), write(Score), write('\n').
 
-	write('\t'), write(State), write('/'), write(Score), write(' ').
+
+
+
+
+
+
+
+write_row(_, _, [], _) :-
+
+	write('\n').
+
+
+write_row(RowNum, ColNum, [pos(X, ColNum/RowNum) | _], WholeList) :-
+
+	ColNum < 3, !,
+
+	write(X), write(' '),
+
+	NewColNum is ColNum + 1,
+
+	write_row(RowNum, NewColNum, WholeList, WholeList).
+
+
+
+write_row(RowNum, ColNum, [pos(X, ColNum/RowNum) | _], _) :-
+
+	write(X),
+
+	write('\n') , !.
+
+
+write_row(RowNum, ColNum, [ _ | Rest], WholeList) :-
+
+	write_row(RowNum, ColNum, Rest, WholeList).
+
+
+
+
 
 
 
@@ -201,29 +245,91 @@ del([Y|R],X,[Y|R1]) :-
 
 
 
-hScore(a, 3).
-hScore(b, 8).
-hScore(c, 1).
-hScore(d, 1).
-hScore(e, 0).
-hScore(f, 27).
-hScore(g, 100).
+goal([ 		pos(0 , 3/1), pos(1 , 1/3), pos(2 , 2/3), 
+			pos(3 , 3/3), pos(4 , 1/2), pos(5 , 2/2), 
+			pos(6 , 3/2), pos(7 , 1/1), pos(8 , 2/1) 	]) .
 
-goal(g).
 
-succ(a, ab, 1, b).
-succ(a, ac, 1, c).
-succ(a, ad, 1, d).
 
-succ(b, bc, 1, c).
-succ(b, bf, 5, f).
 
-succ(c, ce, 1, e).
-succ(c, cf, 1, f).
+succ( [ pos(0, EmptyPos) | TilePositions], _, 1, [pos(0, NewEmptyPos) | NewTilePositions ] ) :-
 
-succ(d, de, 7, e).
-succ(d, df, 8, f).
+	find_neighbour(EmptyPos, TilePositions, NewEmptyPos, NewTilePositions) .
 
-succ(e, ef, 2, f).
 
-succ(f, fg, 2, g).
+find_neighbour(	EmptyPos, [pos(Neighb, NeighbPos)|RestPositions],
+				NeighbPos, [pos(Neighb, EmptyPos)|RestPositions]) :-
+
+		adjacent(EmptyPos, NeighbPos).
+
+
+find_neighbour(EmptyPos, [T |RestPositions], NewEmptyPos, [T | NewPositions]) :-
+			
+		find_neighbour(EmptyPos, RestPositions, NewEmptyPos, NewPositions) .
+
+
+
+
+
+adjacent(X1/Y1, X2/Y1) :-
+
+		DiffX is X1-X2,
+
+		abs(DiffX, 1).
+
+
+adjacent(X1/Y1, X1/Y2) :-
+		
+		DiffY is Y1-Y2,
+
+		abs(DiffY, 1).
+
+
+
+
+abs(X, X) :-
+		
+	X >=0, ! .
+
+
+abs(X, AbsX) :-
+
+	AbsX is -X.
+
+
+
+hScore( [ _ | Positions ], HScore) :-
+
+	goal( [ _ | GoalPositions ]),
+
+	sum_of_distances(Positions, GoalPositions, HScore).
+
+
+
+
+
+sum_of_distances( [ ], [ ], 0 ) .
+
+
+sum_of_distances( [pos( _, Pos) | RestPositions], [pos( _, GoalPos) | RestGoalPositions], Sum) :-
+
+		distance( Pos, GoalPos, Dist ),
+
+		sum_of_distances(RestPositions, RestGoalPositions, Sum1),
+
+		Sum is Sum1 + Dist .
+
+
+
+
+distance( X1 / Y1, X2 / Y2, Dist) :-
+
+	DiffX is X1 - X2,
+
+	abs(DiffX, DistX),
+
+	DiffY is Y1 - Y2,
+
+	abs(DiffY, DistY),
+
+	Dist is DistX + DistY .
