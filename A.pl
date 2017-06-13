@@ -44,6 +44,12 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, NumNodesToChe
 
 	StepLimit >= StepCounter,
 
+	write('Krok '), write(StepCounter),
+
+	write('\n\tStan (reszty) kolejki:\n'), write_n_nodes(NumNodesToCheck, RestQueue),
+
+	write('\n\tWybrany wezel: \n'), write_element(Node), write('\n\n'), !,
+
 	expand(Node, NewNodes),
 
 	insert_new_nodes(NewNodes, RestQueue, NewQueue),
@@ -52,6 +58,26 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, NumNodesToChe
 
 
 
+
+write_n_nodes(_, []).
+
+write_n_nodes(0, _).
+
+write_n_nodes(Num, [Node | RestQueue]) :- 
+
+	NewNum is Num - 1,
+
+	Num > 0,
+
+	write_element(Node),
+
+	write_n_nodes(NewNum, RestQueue).
+
+
+
+write_element(node(State, Action, Parent, Cost, Score)) :-
+
+	write('\t'), write(State), write('/'), write(Score), write(' ').
 
 
 
