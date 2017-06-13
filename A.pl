@@ -77,13 +77,15 @@ write_n_nodes(Num, [Node | RestQueue]) :-
 
 write_element(node(State, Action, Parent, Cost, Score)) :-
 
-	write('\t'), write(State), write('/'), write(Score), write(' ').
+	write('\t'), write(State), write('/'), write(Cost), write(' ').
 
 
 
-fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NumNodesToCheck) :-
 
-	member(FirstNode , ClosedSet), !,
+
+fetch(Node, [ node(FirstNode, _,_,_,_) |RestQueue], ClosedSet, NewRest, NumNodesToCheck) :-
+
+	member(node(FirstNode, _,_,_,_) , ClosedSet), !,
 
 	fetch(Node, RestQueue, ClosedSet , NewRest, NumNodesToCheck).
 
