@@ -1,49 +1,81 @@
-start_A_star( InitState, PathCost) :-
+start_A_star( InitState, PathCost, StepLimit, MaxSteps, NumNodesToCheck ) :-
 
-	score(InitState, 0, 0, InitCost, InitScore) ,
+	MaxSteps >= StepLimit,
 
-	search_A_star( [node(InitState, nil, nil, InitCost , InitScore ) ], [ ], PathCost) .
+	score(InitState, 0, 0, InitCost, InitScore),
 
+	StepCounter is 0,
 
-
-
-search_A_star(Queue, ClosedSet, PathCost) :-
-
-	fetch(Node, Queue, ClosedSet , RestQueue),
-
-	continue(Node, RestQueue, ClosedSet, PathCost).
+	search_A_star( [node(InitState, nil, nil, InitCost , InitScore )], [ ], StepCounter, StepLimit, PathCost, NumNodesToCheck).
 
 
+start_A_star( InitState, PathCost, StepLimit, MaxSteps, NumNodesToCheck) :-
 
-continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet,
-							path_cost(Path, Cost) ) :-
+	MaxSteps > StepLimit,
+
+	NewStepLimit is StepLimit + 1,
+
+	start_A_star( InitState, PathCost, NewStepLimit, MaxSteps, NumNodesToCheck).
+	
+
+
+
+
+search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost, NumNodesToCheck) :-
+
+	fetch(Node, Queue, ClosedSet, RestQueue, NumNodesToCheck),
+
+	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost, NumNodesToCheck).
+	
+
+
+
+
+continue(node(State, Action, Parent, Cost, _ ) , _  ,  ClosedSet, _, _, path_cost(Path, Cost), _) :-
 
 	goal( State), ! ,
 
 	build_path(node(Parent, _ ,_ , _ , _ ) , ClosedSet, [Action/State], Path) .
 
 
-continue(Node, RestQueue, ClosedSet, Path)   :-
+continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, NumNodesToCheck)  :-
 
-	expand( Node, NewNodes),
+	NewStepCounter is StepCounter + 1,
+
+	StepLimit >= StepCounter,
+
+	expand(Node, NewNodes),
 
 	insert_new_nodes(NewNodes, RestQueue, NewQueue),
 
-	search_A_star(NewQueue, [Node | ClosedSet ], Path).
+	search_A_star(NewQueue, [ Node | ClosedSet ], NewStepCounter, StepLimit, Path, NumNodesToCheck).
 
 
 
+
+
+
+fetch(Node, [ FirstNode |RestQueue], ClosedSet, NewRest, NumNodesToCheck) :-
+
+	member(FirstNode , ClosedSet), !,
+
+	fetch(Node, RestQueue, ClosedSet , NewRest, NumNodesToCheck).
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue) :-
+			[node(State, Action,Parent, Cost, Score) |RestQueue], _,  RestQueue, NumNodesToCheck) :- 
+	
+	NumNodesToCheck > 0.
 
-	\+ member(node(State, _ ,_  , _ , _ ) , ClosedSet),   ! .
 
+fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NumNodesToCheck) :-
 
-fetch(Node, [ _ |RestQueue], ClosedSet, NewRest) :-
+	NumNodesToCheck > 0,
 
-	fetch(Node, RestQueue, ClosedSet , NewRest).
+	NewNumNodesToCheck is NumNodesToCheck - 1,
+
+	fetch(Node, RestQueue, ClosedSet, NewRest, NewNumNodesToCheck).
+
 
 
 
@@ -53,12 +85,7 @@ expand(node(State, _ ,_ , Cost, _ ), NewNodes)  :-
 
 	findall(node(ChildState, Action, State, NewCost, ChildScore) ,
 			(succ(State, Action, StepCost, ChildState),
-			    score(ChildState, Cost, StepCost, NewCost, ChildScore) ) ,
-
-											NewNodes) .
-
-
-
+			    score(ChildState, Cost, StepCost, NewCost, ChildScore) ) , NewNodes) .
 
 
 
@@ -74,7 +101,11 @@ score(State, ParentCost, StepCost, Cost, FScore)  :-
 
 
 
+
+
+
 insert_new_nodes( [ ], Queue, Queue) .
+
 
 insert_new_nodes( [Node|RestNodes], Queue, NewQueue) :-
 
@@ -84,7 +115,9 @@ insert_new_nodes( [Node|RestNodes], Queue, NewQueue) :-
 
 
 
-insert_p_queue(Node,  [ ], [Node] )      :-    ! .
+
+
+insert_p_queue(Node,  [ ], [Node] )  :- ! .
 
 
 insert_p_queue(node(State, Action, Parent, Cost, FScore),
@@ -104,9 +137,8 @@ insert_p_queue(node(State, Action, Parent, Cost, FScore),  Queue,
 
 
 
+build_path(node(nil, _, _, _, _ ), _, Path, Path) :- ! .
 
-
-build_path(node(nil, _, _, _, _ ), _, Path, Path) :-    ! .
 
 build_path(node(EndState, _ , _ , _, _ ), Nodes, PartialPath, Path)  :-
 
@@ -116,17 +148,13 @@ build_path(node(EndState, _ , _ , _, _ ), Nodes, PartialPath, Path)  :-
 						[Action/EndState|PartialPath],Path) .
 
 
-del([X|R],X,R).
-del([Y|R],X,[Y|R1]) :-
-	X\=Y,
-	del(R,X,R1).
+
 
 
 del([X|R],X,R).
 del([Y|R],X,[Y|R1]) :-
 	X\=Y,
 	del(R,X,R1).
-
 
 
 
