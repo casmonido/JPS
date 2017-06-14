@@ -88,7 +88,7 @@ write_element(node(State, Action, Parent, Cost, Score)) :-
 
 
 
-fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NumNodesToCheck) :-
+fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewClosedSet3, NewRestQueue3, NumNodesToCheck) :-
 
 	in_closed_set_with_worse_score_if_so_swap(FirstNode, ClosedSet, NewClosedSet, CostDiff, Parent), !,
 
@@ -96,9 +96,13 @@ fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewUpdatedClosedSet, NewUp
 
 	change_children_values(Parent, CostDiff, [], RestQueue, [], NewRestQueue, [], []),
 
-	change_children_values(Parent, CostDiff, [], NewClosedSet, [], UpdatedClosedSet, NewRestQueue, NewRestQueue1),
+	change_children_values(Parent, CostDiff, [], NewClosedSet, [], NewClosedSet2, NewRestQueue, NewRestQueue2),
 
-	fetch(ReturnNode, NewRestQueue1, UpdatedClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NumNodesToCheck).
+	write('\n\tStan kolejki:\n'), write_n_nodes(100, NewRestQueue2),
+
+	write('\n\tStan zbioru zamknietych stanow:\n'), write_n_nodes(100, NewClosedSet2),
+
+	fetch(ReturnNode, NewRestQueue2, NewClosedSet2, NewClosedSet3, NewRestQueue3, NumNodesToCheck).
 
 
 
@@ -257,7 +261,7 @@ change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost
 
 	change_children_values(Parent, CostDiff, WholePrev, RestNextSet, [El | AlreadyDone], ResultSetOne, [], []),
 
-	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet, [], []), !.
+	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet, [], _), !.
 
 
 
@@ -278,7 +282,7 @@ change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost
 
 	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet, NewOtherQueue1, NewOtherQueue2),
 
-	change_children_values(El, CostDiff, [], NewOtherQueue2, [El | AlreadyDone], NewOtherQueue, [], NewOtherQueue), !.
+	change_children_values(El, CostDiff, [], NewOtherQueue2, [], NewOtherQueue, [], _), !.
 
 
 
