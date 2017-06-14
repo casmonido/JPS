@@ -23,9 +23,19 @@ start_A_star( InitState, PathCost, StepLimit, MaxSteps, NumNodesToCheck) :-
 
 search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost, NumNodesToCheck) :-
 
-	fetch(Node, Queue, ClosedSet, RestQueue, NumNodesToCheck),
+	fetch(Node, Queue, ClosedSet, UpdatedClosedSet, RestQueue, NumNodesToCheck),
 
-	continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, PathCost, NumNodesToCheck).
+	write('Krok '), write(StepCounter),
+
+	write('\n\tStan kolejki:\n'), write_n_nodes(100, Queue),
+
+	write('\n\tStan zbioru zamknietych stanow:\n'), write_n_nodes(100, ClosedSet),
+
+	write('\n\tWybrany wezel: \n'), write_element(Node), write('\n\n'), 
+
+	read(t), !,
+
+	continue(Node, RestQueue, UpdatedClosedSet, StepCounter, StepLimit, PathCost, NumNodesToCheck).
 	
 
 
@@ -43,12 +53,6 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, NumNodesToChe
 	NewStepCounter is StepCounter + 1,
 
 	StepLimit >= StepCounter,
-
-	write('Krok '), write(StepCounter),
-
-	write('\n\tStan (reszty) kolejki:\n'), write_n_nodes(NumNodesToCheck, RestQueue),
-
-	write('\n\tWybrany wezel: \n'), write_element(Node), write('\n\n'), !,
 
 	expand(Node, NewNodes),
 
@@ -83,26 +87,44 @@ write_element(node(State, Action, Parent, Cost, Score)) :-
 
 
 
-fetch(Node, [ node(FirstNode, _,_,_,_) |RestQueue], ClosedSet, NewRest, NumNodesToCheck) :-
+
+fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NumNodesToCheck) :-
+
+	in_closed_set_with_worse_score_if_so_swap(FirstNode, ClosedSet, NewClosedSet, CostDiff, Parent), !,
+
+	write('Przeszczep galezi '), write(Parent), write('\n'),
+
+	change_children_values(Parent, CostDiff, [], NewClosedSet, [], UpdatedClosedSet),
+
+	change_children_values(Parent, CostDiff, [], RestQueue, [], NewRestQueue),
+
+	fetch(ReturnNode, NewRestQueue, UpdatedClosedSet, NewUpdatedClosedSet, NewUpdatedRestQueue, NumNodesToCheck).
+
+
+
+fetch(Node, [ node(FirstNode, _,_,_,_) |RestQueue], ClosedSet, UpdatedClosedSet, NewRest, NumNodesToCheck) :-
 
 	member(node(FirstNode, _,_,_,_) , ClosedSet), !,
 
-	fetch(Node, RestQueue, ClosedSet , NewRest, NumNodesToCheck).
+	fetch(Node, RestQueue, ClosedSet, UpdatedClosedSet, NewRest, NumNodesToCheck).
+
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-			[node(State, Action,Parent, Cost, Score) |RestQueue], _,  RestQueue, NumNodesToCheck) :- 
+			[node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet, ClosedSet, RestQueue, NumNodesToCheck) :- 
 	
 	NumNodesToCheck > 0.
 
 
-fetch(Node,	[FirstNode |RestQueue], ClosedSet, [FirstNode | NewRest], NumNodesToCheck) :-
+
+fetch(Node,	[FirstNode |RestQueue], ClosedSet, UpdatedClosedSet, [FirstNode | NewRest], NumNodesToCheck) :-
 
 	NumNodesToCheck > 0,
 
 	NewNumNodesToCheck is NumNodesToCheck - 1,
 
-	fetch(Node, RestQueue, ClosedSet, NewRest, NewNumNodesToCheck).
+	fetch(Node, RestQueue, ClosedSet, UpdatedClosedSet, NewRest, NewNumNodesToCheck).
+
 
 
 
@@ -213,3 +235,89 @@ succ(d, df, 8, f).
 succ(e, ef, 2, f).
 
 succ(f, fg, 2, g).
+
+
+
+
+
+
+
+
+
+
+change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | RestNextSet], AlreadyDone, ResultSet) :-
+
+	\+ member(El, AlreadyDone), !,
+
+	write('Changing cost+score in node '), write(El), write(' with parent: '), write(Parent), write('\n'),
+
+	NewCost is Cost - CostDiff,
+
+	NewScore is FScore - CostDiff,
+
+	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
+
+	change_children_values(Parent, CostDiff, WholePrev, RestNextSet, [El | AlreadyDone], ResultSetOne),
+
+	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet).
+
+
+
+change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | NextSet], AlreadyDone, ResultSet) :-
+
+	write('Changing cost+score in node '), write(El), write(' with parent: '), write(Parent), write('\n'),
+
+	NewCost is Cost - CostDiff,
+
+	NewScore is FScore - CostDiff,
+
+	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
+
+	change_children_values(Parent, CostDiff, WholePrev, NextSet, AlreadyDone, ResultSet).
+
+
+change_children_values(_, _, PrevSet, [], _, PrevSet).
+
+
+change_children_values(Parent, CostDiff, PrevSet, [X | NextSet], AlreadyDone, ResultSet)  :-
+
+	add_to_end(X, PrevSet, WholePrev),
+
+	change_children_values(Parent, CostDiff, WholePrev, NextSet, AlreadyDone, ResultSet).
+
+
+
+
+
+
+
+
+
+
+
+
+in_closed_set_with_worse_score_if_so_swap(node(Element, Action, Parent, Cost, Score), 
+										[node(Element, _, _, OldCost, _) | RestClosedSet], 
+			[node(Element, Action, Parent, Cost, Score) | RestClosedSet], CostDiff, Element) :-
+
+	OldCost > Cost, !, 
+
+	CostDiff is OldCost - Cost.
+
+
+
+in_closed_set_with_worse_score_if_so_swap(Node, [ OtherNode | RestClosedSet], 
+										[OtherNode | NewRestClosedSet], CostDiff, NodeName) :-
+	
+	in_closed_set_with_worse_score_if_so_swap(Node, RestClosedSet, NewRestClosedSet, CostDiff, NodeName).
+
+
+
+
+
+add_to_end(Elem, [First | RestSet], [First | ReturnSet]) :-
+
+			add_to_end(Elem, RestSet, ReturnSet).
+
+
+add_to_end(Elem, [], [Elem]).
