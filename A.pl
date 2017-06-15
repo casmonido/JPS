@@ -88,9 +88,9 @@ fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewClosedSet3, NewRestQueu
 
 	write('\nPrzeszczep galezi '), write(Parent), write('\n'),
 
-	change_children_values(Parent, CostDiff, [], RestQueue, [], NewRestQueue, [], []),
+	change_children_in_queue(Parent, CostDiff, [], RestQueue, NewRestQueue),
 
-	change_children_values(Parent, CostDiff, [], NewClosedSet, [], NewClosedSet2, NewRestQueue, NewRestQueue2),
+	change_children_in_set(Parent, CostDiff, [], NewClosedSet, NewClosedSet2, NewRestQueue, NewRestQueue2),
 
 	write('\n\tStan kolejki:\n'), write_nodes(NewRestQueue2),
 
@@ -240,12 +240,9 @@ succ(f, fg, 1, g).
 
 
 
-change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | RestNextSet], 
-	AlreadyDone, ResultSet, [], []) :-
+change_children_in_queue(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | RestNextSet], ResultSet) :-
 
-	\+ member(El, AlreadyDone), !,
-
-	write(Parent), write('. Modifying node '), write(El), write(', who will be parent\n'),
+	write(Parent), write('.Q Modifying node '), write(El), write('\n'),
 
 	NewCost is Cost - CostDiff,
 
@@ -253,38 +250,33 @@ change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost
 
 	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
 
-	change_children_values(Parent, CostDiff, WholePrev, RestNextSet, [El | AlreadyDone], ResultSetOne, [], []),
-
-	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet, [], _), !.
+	change_children_in_queue(Parent, CostDiff, WholePrev, RestNextSet, ResultSet), !.
 
 
+change_children_in_queue(Parent, CostDiff, PrevSet, [node(El, Action, NotParent, Cost, FScore) | RestNextSet], ResultSet) :-
 
-change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | RestNextSet], 
-	AlreadyDone, ResultSet, OtherQueue, NewOtherQueue) :-
+	write(Parent), write('.Q Skipping node '), write(El), write('\n'),
 
-	\+ member(El, AlreadyDone), !,
+	add_to_end(node(El, Action, NotParent, Cost, FScore), PrevSet, WholePrev),
 
-	write(Parent), write('. Modifying node '), write(El), write(', which will be next parent\n'),
+	change_children_in_queue(Parent, CostDiff, WholePrev, RestNextSet, ResultSet), !.
 
-	NewCost is Cost - CostDiff,
 
-	NewScore is FScore - CostDiff,
+change_children_in_queue(Parent, _, PrevSet, [], PrevSet) :-
 
-	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
-
-	change_children_values(Parent, CostDiff, WholePrev, RestNextSet, [El | AlreadyDone], ResultSetOne, OtherQueue, NewOtherQueue1),
-
-	change_children_values(El, CostDiff, [], ResultSetOne, [El | AlreadyDone], ResultSet, NewOtherQueue1, NewOtherQueue2),
-
-	change_children_values(El, CostDiff, [], NewOtherQueue2, [], NewOtherQueue, [], _), !.
+	write(Parent), write('. Queue empty \n'), !.
 
 
 
 
-change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | NextSet], 
-	AlreadyDone, ResultSet, OtherQueue, NewOtherQueue) :-
 
-	write(Parent), write('. Modifying node '), write(El), write('\n'),
+
+
+
+change_children_in_set(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost, FScore) | RestNextSet], 
+	ResultSet, Queue, NewQueue) :-
+
+	write(Parent), write('.CS Modifying node '), write(El), write(', which will be next parent\n'),
 
 	NewCost is Cost - CostDiff,
 
@@ -292,22 +284,28 @@ change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, Parent, Cost
 
 	add_to_end(node(El, Action, Parent, NewCost, NewScore), PrevSet, WholePrev),
 
-	change_children_values(Parent, CostDiff, WholePrev, NextSet, AlreadyDone, ResultSet, OtherQueue, NewOtherQueue), !.
+	change_children_in_set(Parent, CostDiff, WholePrev, RestNextSet, ResultSetOne, Queue, NewQueue1),
+
+	change_children_in_set(El, CostDiff, [], ResultSetOne, ResultSet, NewQueue1, NewQueue2),
+
+	change_children_in_queue(El, CostDiff, [], NewQueue2, NewQueue), !.
 
 
-change_children_values(Parent, _, PrevSet, [], _, PrevSet, OtherQueue, OtherQueue) :-
+change_children_in_set(Parent, CostDiff, PrevSet, [node(El, Action, NotParent, Cost, FScore) | NextSet], 
+	ResultSet, Queue, NewQueue)  :- 
+
+	write(Parent), write('.CS Skipping node '), write(El), write('\n'),
+
+	add_to_end(node(El, Action, NotParent, Cost, FScore), PrevSet, WholePrev),
+
+	change_children_in_set(Parent, CostDiff, WholePrev, NextSet, ResultSet, Queue, NewQueue), !.
+
+
+change_children_in_set(Parent, _, PrevSet, [], PrevSet, Queue, Queue) :-
 
 	write(Parent), write('. NextSet empty \n'), !.
 
 
-change_children_values(Parent, CostDiff, PrevSet, [node(El, Action, X, Cost, FScore) | NextSet], 
-	AlreadyDone, ResultSet, OtherQueue, NewOtherQueue)  :- 
-
-	write(Parent), write('. Skipping '), write(El), write('\n'),
-
-	add_to_end(node(El, Action, X, Cost, FScore), PrevSet, WholePrev),
-
-	change_children_values(Parent, CostDiff, WholePrev, NextSet, AlreadyDone, ResultSet, OtherQueue, NewOtherQueue), !.
 
 
 
