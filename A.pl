@@ -25,9 +25,9 @@ search_A_star(Queue, ClosedSet, StepCounter, StepLimit, PathCost, NumNodesToChec
 
 	write('Krok '), write(StepCounter),
 
-	write('\n\tStan kolejki:\n'), write_n_nodes(100, Queue),
+	write('\n\tStan kolejki:\n'), write_nodes(Queue),
 
-	write('\n\tStan zbioru zamknietych stanow:\n'), write_n_nodes(100, ClosedSet),
+	write('\n\tStan zbioru zamknietych stanow:\n'), write_nodes(ClosedSet),
 
 	fetch(Node, Queue, ClosedSet, UpdatedClosedSet, RestQueue, NumNodesToCheck),
 
@@ -63,19 +63,13 @@ continue(Node, RestQueue, ClosedSet, StepCounter, StepLimit, Path, NumNodesToChe
 
 
 
-write_n_nodes(_, []).
+write_nodes([]).
 
-write_n_nodes(0, _).
-
-write_n_nodes(Num, [Node | RestQueue]) :- 
-
-	NewNum is Num - 1,
-
-	Num > 0,
+write_nodes([Node | RestQueue]) :- 
 
 	write_element(Node),
 
-	write_n_nodes(NewNum, RestQueue).
+	write_nodes(RestQueue).
 
 
 
@@ -98,9 +92,9 @@ fetch(ReturnNode, [FirstNode | RestQueue], ClosedSet, NewClosedSet3, NewRestQueu
 
 	change_children_values(Parent, CostDiff, [], NewClosedSet, [], NewClosedSet2, NewRestQueue, NewRestQueue2),
 
-	write('\n\tStan kolejki:\n'), write_n_nodes(100, NewRestQueue2),
+	write('\n\tStan kolejki:\n'), write_nodes(NewRestQueue2),
 
-	write('\n\tStan zbioru zamknietych stanow:\n'), write_n_nodes(100, NewClosedSet2),
+	write('\n\tStan zbioru zamknietych stanow:\n'), write_nodes(NewClosedSet2),
 
 	fetch(ReturnNode, NewRestQueue2, NewClosedSet2, NewClosedSet3, NewRestQueue3, NumNodesToCheck).
 
